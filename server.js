@@ -4,17 +4,18 @@ var net = require('net');
 
 var port = process.env['PORT_SERVER'] || 4242;
 
-var REMOTE_ADDR = process.env['REMOTE_SERVER_ADDR'];
-var REMOTE_PORT = process.env['REMOTE_SERVER_PORT'];
+var config = require('./config')
+var REMOTE_ADDR = config.REMOTE_SERVER_ADDR;
+var REMOTE_PORT = config.REMOTE_SERVER_PORT;
 
 var server = net.createServer(function(socket){
 
     var data = function(chunk){
-  	if (DEBUG){
-			console.log("> Data received from from ip: " + socket.remoteAddress);
-			console.log("-------------------------");
-			console.log(chunk.toString());
-			console.log("-------------------------");
+	  	if (DEBUG){
+				console.log("> Data received from from ip: " + socket.remoteAddress);
+				console.log("-------------------------");
+				console.log(chunk.toString());
+				console.log("-------------------------");
 		}
 		if (!REMOTE_ADDR || !REMOTE_PORT ){
 			if(DEBUG){
