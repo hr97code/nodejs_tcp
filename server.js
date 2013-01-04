@@ -2,57 +2,69 @@ var DEBUG = 1 /* 0 or 1 */;
 
 var net = require('net');
 
-var port = process.env['PORT_SERVER'] || 4242;
-
 var config = require('./config')
-var REMOTE_ADDR = config.REMOTE_SERVER_ADDR;
-var REMOTE_PORT = config.REMOTE_SERVER_PORT;
+var proxy_hosts = config.proxy_hosts;
 
-var server = net.createServer(function(socket){
+function mk_server(local_port, remote_addr, remote_port){
+    var server = net.createServer(function(socket){
+        
+        var r_server = net.createServer(function(r_socket){
+            var r_write = function(msg){
+                r_socket.write(msg);
+            }
+            var r_data = function(chunk){
+                if(DEBUG)
+                    console.log('<< From remote to proxy and to client', data.toString());
+                socket.write(chunk);
+            }
+            r_socket.on("data", r_data);
+        });
+        try{
+            r_server.listen(remote_port, remote_addr);
+        }catch(err){
+            console.log("open remote socket error:" + err);
+        }
+        
+        var data = function(chunk){
+          	if (DEBUG){
+    				console.log("> Data received from from ip: " + socket.remoteAddress);
+    				console.log("-------------------------");
+    				console.log(chunk.toString());
+    				console.log("-------------------------");
+    		}
+    		if (!local_port || !remote_addr ){
+    			if(DEBUG){
+    				console.log("Nothing to proxy");
+    			}
+    			socket.write('?');
+    		}else{
+				if(DEBUG) console.log('>> From proxy to remote', chunk.toString());
+				r_server.r_write(chunk);
+    		}
+        };
+    
+        var close = function(){
+    		if (DEBUG) console.log("> Connection with ip: " + socket.remoteAddress + " just closed <");
+            r_server.end();
+            socket.destroy();
+        };
+    	
+    	if (DEBUG) console.log("> New connection from ip: " + socket.remoteAddress);
+    	
+        socket.on("data", data);
+        socket.on("close", close);
+    });
+    console.log("Starting TCP server on port: " + local_port);
+    server.listen(local_port);
+    return server;
+}
 
-    var data = function(chunk){
-	  	if (DEBUG){
-				console.log("> Data received from from ip: " + socket.remoteAddress);
-				console.log("-------------------------");
-				console.log(chunk.toString());
-				console.log("-------------------------");
-		}
-		if (!REMOTE_ADDR || !REMOTE_PORT ){
-			if(DEBUG){
-				console.log("Nothing to proxy");
-			}
-			socket.write('?');
-		}else{
-			var serviceSocket = new net.Socket();
-			serviceSocket.connect(parseInt(REMOTE_PORT), REMOTE_ADDR, function () {
-				if(DEBUG)
-					console.log('>> From proxy to remote', msg.toString());
-				serviceSocket.write(msg);
-			});
-			serviceSocket.on("data", function (data) {
-				if(DEBUG)
-					console.log('<< From remote to proxy and to client', data.toString());
-				socket.write(data);
-			});
-		}
-    };
-
-    var close = function(){
-		if (DEBUG){
-			console.log("> Connection with ip: " + socket.remoteAddress + " just closed <");
-		}
-    };
-	
-	if (DEBUG){
-		console.log("> New connection from ip: " + socket.remoteAddress);
-	}
-    socket.on("data", data);
-    socket.on("close", close);
-});
-
-
-console.log("Starting TCP server on port: " + port);
-server.listen(port);
+for(var j=0; j<proxy_hosts.length; j++){
+    var h = proxy_hosts[j];
+    var lport = process.env['PORT_SERVER_' + j] || 4242 + j;
+    console.log("making proxy for " + h[0] + ":" + h[1] + " on port: " + lport);
+    mk_server(lport, h[0], h[1],);
+}
 
 
 /* A HTTP server just for info purposes */
