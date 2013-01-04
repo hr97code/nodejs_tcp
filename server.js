@@ -87,7 +87,7 @@ http.get('/', function(req, res){
 http.get('/q/', function(req, res){
     var d = {};
     for(var j=0; j<proxy_hosts.length; j++){
-        var h = proxy_host[j];
+        var h = proxy_hosts[j];
         d[j + ':' + h[0]] = {'0': h[1], '1': process.env['DOTCLOUD_TCP_SERVER_' + j + '_PORT']};
     }
     res.json(d);
