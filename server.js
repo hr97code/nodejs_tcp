@@ -27,10 +27,10 @@ function mk_server(local_port, remote_addr, remote_port){
         
         var data = function(chunk){
           	if (DEBUG){
-    				console.log("> Data received from from ip: " + socket.remoteAddress);
-    				console.log("-------------------------");
-    				console.log(chunk.toString());
-    				console.log("-------------------------");
+                console.log("> Data received from from ip: " + socket.remoteAddress);
+                console.log("-------------------------");
+                console.log(chunk.toString());
+                console.log("-------------------------");
     		}
     		if (!local_port || !remote_addr ){
     			if(DEBUG){
@@ -61,7 +61,7 @@ function mk_server(local_port, remote_addr, remote_port){
 
 for(var j=0; j<proxy_hosts.length; j++){
     var h = proxy_hosts[j];
-    var lport = process.env['PORT_SERVER_' + j] || 4242 + j;
+    var lport = process.env['PORT_SERVER_' + j] || (4242 + j);
     console.log("making proxy for " + h[0] + ":" + h[1] + " on port: " + lport);
     mk_server(lport, h[0], h[1],);
 }
