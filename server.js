@@ -59,11 +59,13 @@ function mk_server(local_port, remote_addr, remote_port){
     return server;
 }
 
+var server_list = new Array();
 for(var j=0; j<proxy_hosts.length; j++){
     var h = proxy_hosts[j];
     var lport = process.env['PORT_SERVER_' + j] || (4242 + j);
     console.log("making proxy for " + h[0] + ":" + h[1] + " on port: " + lport);
-    mk_server(lport, h[0], h[1]);
+    var sv = mk_server(lport, h[0], h[1]);
+    server_list[j] = sv;
 }
 
 
@@ -81,6 +83,14 @@ http.get('/', function(req, res){
         help: "telnet "+ process.env['DOTCLOUD_TCP_SERVER_HOST'] + " " + process.env['DOTCLOUD_TCP_SERVER_PORT'], 
         env: process.env*/
     });
+});
+http.get('/q/', function(req, res){
+    var d = {};
+    for(var j=0; j<proxy_hosts.length; j++){
+        var h = proxy_host[j];
+        d[j + ':' + h[0]] = {'0': h[1], '1': process.env['DOTCLOUD_TCP_SERVER_' + j + '_PORT']};
+    }
+    res.json(d);
 });
 
 http.listen(process.env['PORT_NODEJS'] || 8080);
