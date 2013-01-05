@@ -33,18 +33,18 @@ function mk_server(local_port, remote_addr, remote_port){
                 console.log("-------------------------");
     		}
     		if (!local_port || !remote_addr ){
-    			if(DEBUG){
-    				console.log("Nothing to proxy");
-    			}
-    			socket.write('?');
+                if(DEBUG){
+                    console.log("Nothing to proxy");
+                }
+                socket.write('?');
     		}else{
-				if(DEBUG) console.log('>> From proxy to remote', chunk.toString());
-				r_server.r_write(chunk);
+                if(DEBUG) console.log('>> From proxy to remote', chunk.toString());
+                r_server.r_write(chunk);
     		}
         };
     
         var close = function(){
-    		if (DEBUG) console.log("> Connection with ip: " + socket.remoteAddress + " just closed <");
+            if (DEBUG) console.log("> Connection with ip: " + socket.remoteAddress + " just closed <");
             r_server.end();
             socket.destroy();
         };
