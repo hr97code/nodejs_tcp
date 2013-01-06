@@ -1,4 +1,7 @@
 {
-    
-    "proxy_hosts": [["", 9000], ["", 9001]]
+    "debug": 0,
+    "proxy_hosts": [],
+    "http_proxy_route": [   ["/a/", "0.0.0.0", 8081, true],
+                            ["/", "0.0.0.0", 8081, false]
+			            ]
 }
