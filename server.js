@@ -1,8 +1,7 @@
-var DEBUG = 1 /* 0 or 1 */;
-
 var net = require('net');
 
-var config = require('./config')
+var config = require('./config');
+var DEBUG = config.debug;
 var proxy_hosts = config.proxy_hosts;
 
 function mk_server(local_port, remote_addr, remote_port){
@@ -41,6 +40,13 @@ function mk_server(local_port, remote_addr, remote_port){
     return server;
 }
 
+//处理各种错误
+process.on('uncaughtException', function(err)
+{
+    console.log("\nError!!!!");
+    console.log(err);
+});
+
 var server_list = new Array();
 for(var j=0; j<proxy_hosts.length; j++){
     var h = proxy_hosts[j];
@@ -50,29 +56,42 @@ for(var j=0; j<proxy_hosts.length; j++){
     server_list[j] = sv;
 }
 
+var httpProxy = require('./lib/node-http-proxy');
+var http_proxy_route = config.http_proxy_route;
+var proxy_local_port = process.env['PORT_NODEJS'] || 8080;
 
-/* A HTTP server just for info purposes */
+function starts_with(obj, s){
+    return obj.indexOf(s) == 0;
+} 
 
-var express = require('express');
-var http = express();
+httpProxy.createServer(function (req, res, proxy) {
+  var buffer = httpProxy.buffer(req);
+  var _url = req.url;
+  if (DEBUG) console.log("routing url:::" + _url);
+  for(var k=0; k<http_proxy_route.length; k++){
+      var d = http_proxy_route[k];
+      var u = d[0], h = d[1], p = d[2], rset = d[3];
+      if(starts_with(_url, u)){
+          if (rset){
+              var new_url = _url.substring(u.length);
+              if (DEBUG) console.log("new url::" + new_url);
+              if(new_url.substring(0,1) != '/'){
+                new_url = '/' + new_url;
+              }
+              if (DEBUG) console.log("fix new url::" + new_url);
+              req.url = new_url;
+          }
+          proxy.proxyRequest(req, res, {
+            port: p,
+            host: h,
+            buffer: buffer
+          });
+          return;
+      }
+  }
+  res.writeHead(200, { 'Content-Type': 'text/html' });
+  res.write("404 not route");
+  res.end();
+}).listen(proxy_local_port);
 
-http.get('/', function(req, res){
-    res.json({
-        hi: 'hello world!'
-        /*
-        host: process.env['DOTCLOUD_TCP_SERVER_HOST'],
-        port: process.env['DOTCLOUD_TCP_SERVER_PORT'],
-        help: "telnet "+ process.env['DOTCLOUD_TCP_SERVER_HOST'] + " " + process.env['DOTCLOUD_TCP_SERVER_PORT'], 
-        env: process.env*/
-    });
-});
-http.get('/q/', function(req, res){
-    var d = {};
-    for(var j=0; j<proxy_hosts.length; j++){
-        var h = proxy_hosts[j];
-        d[j + ':' + h[0]] = {'0': h[1], '1': process.env['DOTCLOUD_TCP_SERVER_' + j + '_PORT']};
-    }
-    res.json(d);
-});
-
-http.listen(process.env['PORT_NODEJS'] || 8080);
+require('./index');
