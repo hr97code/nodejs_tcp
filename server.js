@@ -15,7 +15,7 @@ function mk_server(local_port, remote_addr, remote_port){
     		console.log('connect remote ' + remote_addr + ':' + remote_port)
     	});
     	r_conn.on('data', function(data){
-                    socket.write(chunk);
+                    socket.write(data);
         });
     	r_conn.on('error', function(d){
     		console.log('remote socket error:' + d)
